@@ -122,7 +122,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             if isshape(arg1):
                 M, N = arg1
                 self.shape = (M,N)
-                idx_dtype = get_index_dtype(maxval=max(M, N))
+                idx_dtype = get_index_dtype(maxval=max(M-1, N-1))
                 self.row = np.array([], dtype=idx_dtype)
                 self.col = np.array([], dtype=idx_dtype)
                 self.data = np.array([], getdtype(dtype, default=float))
@@ -228,7 +228,7 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             warn("col index array has non-integer dtype (%s) "
                     % self.col.dtype.name)
 
-        idx_dtype = get_index_dtype(maxval=max(self.shape))
+        idx_dtype = get_index_dtype(maxval=max(self.shape[0]-1, self.shape[1]-1))
         self.row = np.asarray(self.row, dtype=idx_dtype)
         self.col = np.asarray(self.col, dtype=idx_dtype)
         self.data = to_native(self.data)
@@ -283,15 +283,18 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csc_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            idx_dtype = get_index_dtype((self.col, self.row),
-                                        maxval=max(self.nnz, M))
-            indptr = np.empty(N + 1, dtype=idx_dtype)
-            indices = np.empty(self.nnz, dtype=idx_dtype)
+            index_dtype = get_index_dtype((self.col, self.row),
+                                           maxval=max(N-1, M-1))
+
+            indptr_dtype = get_index_dtype(maxval=self.nnz)
+
+            indptr = np.empty(N + 1, dtype=indptr_dtype)
+            indices = np.empty(self.nnz, dtype=index_dtype)
             data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
             coo_tocsr(N, M, self.nnz,
-                      self.col.astype(idx_dtype),
-                      self.row.astype(idx_dtype),
+                      self.col.astype(index_dtype),
+                      self.row.astype(index_dtype),
                       self.data,
                       indptr, indices, data)
 
@@ -325,15 +328,18 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             return csr_matrix(self.shape, dtype=self.dtype)
         else:
             M,N = self.shape
-            idx_dtype = get_index_dtype((self.row, self.col),
-                                        maxval=max(self.nnz, N))
-            indptr = np.empty(M + 1, dtype=idx_dtype)
-            indices = np.empty(self.nnz, dtype=idx_dtype)
+            index_dtype = get_index_dtype((self.row, self.col),
+                                        maxval=max(M-1, N-1))
+
+            indptr_dtype = get_index_dtype(maxval=self.nnz)
+
+            indptr = np.empty(M + 1, dtype=indptr_dtype)
+            indices = np.empty(self.nnz, dtype=index_dtype)
             data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
             coo_tocsr(M, N, self.nnz,
-                      self.row.astype(idx_dtype),
-                      self.col.astype(idx_dtype),
+                      self.row.astype(index_dtype),
+                      self.col.astype(index_dtype),
                       self.data,
                       indptr,
                       indices,

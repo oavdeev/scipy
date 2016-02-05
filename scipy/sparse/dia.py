@@ -97,7 +97,7 @@ class dia_matrix(_data_matrix):
                 # create empty matrix
                 self.shape = arg1   # spmatrix checks for errors here
                 self.data = np.zeros((0,0), getdtype(dtype, default=float))
-                idx_dtype = get_index_dtype(maxval=max(self.shape))
+                idx_dtype = get_index_dtype(maxval=max(self.shape[0]-1, self.shape[1]-1))
                 self.offsets = np.zeros((0), dtype=idx_dtype)
             else:
                 try:
@@ -110,7 +110,7 @@ class dia_matrix(_data_matrix):
                         raise ValueError('expected a shape argument')
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
                     self.offsets = np.atleast_1d(np.array(arg1[1],
-                                                          dtype=get_index_dtype(maxval=max(shape)),
+                                                          dtype=get_index_dtype(maxval=max(shape[0]-1, shape[1]-1)),
                                                           copy=copy))
                     self.shape = shape
         else:

@@ -28,90 +28,90 @@ from distutils.dep_util import newer
 
 # bsr.h
 BSR_ROUTINES = """
-bsr_diagonal        v iiiiIIT*T
-bsr_scale_rows      v iiiiII*TT
-bsr_scale_columns   v iiiiII*TT
-bsr_sort_indices    v iiii*I*I*T
-bsr_transpose       v iiiiIIT*I*I*T
-bsr_matmat_pass2    v iiiiiIITIIT*I*I*T
-bsr_matvec          v iiiiIITT*T
-bsr_matvecs         v iiiiiIITT*T
-bsr_elmul_bsr       v iiiiIITIIT*I*I*T
-bsr_eldiv_bsr       v iiiiIITIIT*I*I*T
-bsr_plus_bsr        v iiiiIITIIT*I*I*T
-bsr_minus_bsr       v iiiiIITIIT*I*I*T
-bsr_maximum_bsr     v iiiiIITIIT*I*I*T
-bsr_minimum_bsr     v iiiiIITIIT*I*I*T
-bsr_ne_bsr          v iiiiIITIIT*I*I*B
-bsr_lt_bsr          v iiiiIITIIT*I*I*B
-bsr_gt_bsr          v iiiiIITIIT*I*I*B
-bsr_le_bsr          v iiiiIITIIT*I*I*B
-bsr_ge_bsr          v iiiiIITIIT*I*I*B
+bsr_diagonal        v iiiiPIT*T
+bsr_scale_rows      v iiiiPI*TT
+bsr_scale_columns   v iiiiPI*TT
+bsr_sort_indices    v iiii*P*I*T
+bsr_transpose       v iiiiPIT*P*I*T
+bsr_matmat_pass2    v iiiiiPITPIT*P*I*T
+bsr_matvec          v iiiiPITT*T
+bsr_matvecs         v iiiiiPITT*T
+bsr_elmul_bsr       v iiiiPITPIT*P*I*T
+bsr_eldiv_bsr       v iiiiPITPIT*P*I*T
+bsr_plus_bsr        v iiiiPITPIT*P*I*T
+bsr_minus_bsr       v iiiiPITPIT*P*I*T
+bsr_maximum_bsr     v iiiiPITPIT*P*I*T
+bsr_minimum_bsr     v iiiiPITPIT*P*I*T
+bsr_ne_bsr          v iiiiPITPIT*P*I*B
+bsr_lt_bsr          v iiiiPITPIT*P*I*B
+bsr_gt_bsr          v iiiiPITPIT*P*I*B
+bsr_le_bsr          v iiiiPITPIT*P*I*B
+bsr_ge_bsr          v iiiiPITPIT*P*I*B
 """
 
 # csc.h
 CSC_ROUTINES = """
-csc_diagonal        v iiIIT*T
-csc_tocsr           v iiIIT*I*I*T
-csc_matmat_pass1    v iiIIII*I
-csc_matmat_pass2    v iiIITIIT*I*I*T
-csc_matvec          v iiIITT*T
-csc_matvecs         v iiiIITT*T
-csc_elmul_csc       v iiIITIIT*I*I*T
-csc_eldiv_csc       v iiIITIIT*I*I*T
-csc_plus_csc        v iiIITIIT*I*I*T
-csc_minus_csc       v iiIITIIT*I*I*T
-csc_maximum_csc     v iiIITIIT*I*I*T
-csc_minimum_csc     v iiIITIIT*I*I*T
-csc_ne_csc          v iiIITIIT*I*I*B
-csc_lt_csc          v iiIITIIT*I*I*B
-csc_gt_csc          v iiIITIIT*I*I*B
-csc_le_csc          v iiIITIIT*I*I*B
-csc_ge_csc          v iiIITIIT*I*I*B
+csc_diagonal        v iiPIT*T
+csc_tocsr           v iiPIT*P*I*T
+csc_matmat_pass1    v iiPIPI*P
+csc_matmat_pass2    v iiPITPIT*P*I*T
+csc_matvec          v iiPITT*T
+csc_matvecs         v iiiPITT*T
+csc_elmul_csc       v iiPITPIT*P*I*T
+csc_eldiv_csc       v iiPITPIT*P*I*T
+csc_plus_csc        v iiPITPIT*P*I*T
+csc_minus_csc       v iiPITPIT*P*I*T
+csc_maximum_csc     v iiPITPIT*P*I*T
+csc_minimum_csc     v iiPITPIT*P*I*T
+csc_ne_csc          v iiPITPIT*P*I*B
+csc_lt_csc          v iiPITPIT*P*I*B
+csc_gt_csc          v iiPITPIT*P*I*B
+csc_le_csc          v iiPITPIT*P*I*B
+csc_ge_csc          v iiPITPIT*P*I*B
 """
 
 # csr.h
 CSR_ROUTINES = """
-csr_matmat_pass1    v iiIIII*I
-csr_matmat_pass2    v iiIITIIT*I*I*T
-csr_diagonal        v iiIIT*T
-csr_tocsc           v iiIIT*I*I*T
-csr_tobsr           v iiiiIIT*I*I*T
-csr_matvec          v iiIITT*T
-csr_matvecs         v iiiIITT*T
-csr_elmul_csr       v iiIITIIT*I*I*T
-csr_eldiv_csr       v iiIITIIT*I*I*T
-csr_plus_csr        v iiIITIIT*I*I*T
-csr_minus_csr       v iiIITIIT*I*I*T
-csr_maximum_csr     v iiIITIIT*I*I*T
-csr_minimum_csr     v iiIITIIT*I*I*T
-csr_ne_csr          v iiIITIIT*I*I*B
-csr_lt_csr          v iiIITIIT*I*I*B
-csr_gt_csr          v iiIITIIT*I*I*B
-csr_le_csr          v iiIITIIT*I*I*B
-csr_ge_csr          v iiIITIIT*I*I*B
-csr_scale_rows      v iiII*TT
-csr_scale_columns   v iiII*TT
-csr_sort_indices    v iI*I*T
-csr_eliminate_zeros v ii*I*I*T
-csr_sum_duplicates  v ii*I*I*T
-get_csr_submatrix   v iiIITiiii*V*V*W
-csr_sample_values   v iiIITiII*T
-csr_count_blocks    i iiiiII
-csr_sample_offsets  i iiIIiII*I
-expandptr           v iI*I
+csr_matmat_pass1    v iiPIPI*P
+csr_matmat_pass2    v iiPITPIT*P*I*T
+csr_diagonal        v iiPIT*T
+csr_tocsc           v iiPIT*P*I*T
+csr_tobsr           v iiiiPIT*P*I*T
+csr_matvec          v iiPITT*T
+csr_matvecs         v iiiPITT*T
+csr_elmul_csr       v iiPITPIT*P*I*T
+csr_eldiv_csr       v iiPITPIT*P*I*T
+csr_plus_csr        v iiPITPIT*P*I*T
+csr_minus_csr       v iiPITPIT*P*I*T
+csr_maximum_csr     v iiPITPIT*P*I*T
+csr_minimum_csr     v iiPITPIT*P*I*T
+csr_ne_csr          v iiPITPIT*P*I*B
+csr_lt_csr          v iiPITPIT*P*I*B
+csr_gt_csr          v iiPITPIT*P*I*B
+csr_le_csr          v iiPITPIT*P*I*B
+csr_ge_csr          v iiPITPIT*P*I*B
+csr_scale_rows      v iiPI*TT
+csr_scale_columns   v iiPI*TT
+csr_sort_indices    v iP*I*T
+csr_eliminate_zeros v ii*P*I*T
+csr_sum_duplicates  v ii*P*I*T
+get_csr_submatrix   v iiPITiiii*U*V*W
+csr_sample_values   v iiPITiII*T
+csr_count_blocks    i iiiiPI
+csr_sample_offsets  i iiPIiII*P
+expandptr           v iP*I
 test_throw_error    i
-csr_has_sorted_indices    i iII
-csr_has_canonical_format  i iII
+csr_has_sorted_indices    i iPI
+csr_has_canonical_format  i iPI
 """
 
 # coo.h, dia.h, csgraph.h
 OTHER_ROUTINES = """
-coo_tocsr           v iiiIIT*I*I*T
-coo_todense         v iiiIIT*Ti
-coo_matvec          v iIITT*T
-dia_matvec          v iiiiITT*T
-cs_graph_components i iII*I
+coo_tocsr           v iipIIT*P*I*T
+coo_todense         v iipIIT*Ti
+coo_matvec          v pIITT*T
+dia_matvec          v iiiiPTT*T
+cs_graph_components i iPI*I
 """
 
 # List of compilation units
@@ -126,6 +126,12 @@ COMPILATION_UNITS = [
 # List of the supported index typenums and the corresponding C++ types
 #
 I_TYPES = [
+    ('NPY_INT32', 'npy_int32'),
+    ('NPY_INT64', 'npy_int64'),
+]
+
+
+P_TYPES = [
     ('NPY_INT32', 'npy_int32'),
     ('NPY_INT64', 'npy_int64'),
 ]
@@ -158,7 +164,7 @@ T_TYPES = [
 #
 
 THUNK_TEMPLATE = """
-static Py_ssize_t %(name)s_thunk(int I_typenum, int T_typenum, void **a)
+static Py_ssize_t %(name)s_thunk(int I_typenum, int P_typenum, int T_typenum, void **a)
 {
     %(thunk_content)s
 }
@@ -173,7 +179,7 @@ NPY_VISIBILITY_HIDDEN PyObject *
 """
 
 GET_THUNK_CASE_TEMPLATE = """
-static int get_thunk_case(int I_typenum, int T_typenum)
+static int get_thunk_case(int I_typenum, int P_typenum, int T_typenum)
 {
     %(content)s;
     return -1;
@@ -203,7 +209,8 @@ def get_thunk_type_set():
          found.
 
     """
-    it_types = []
+    ipt_types = []
+    ip_types = []
     i_types = []
 
     j = 0
@@ -213,24 +220,35 @@ def get_thunk_type_set():
     for I_typenum, I_type in I_TYPES:
         piece = """
         else if (I_typenum == %(I_typenum)s) {
-            if (T_typenum == -1) { return %(j)s; }"""
+            if (T_typenum == -1 && P_typenum == -1) { return %(j)s; }"""
         getter_code += piece % dict(I_typenum=I_typenum, j=j)
 
-        i_types.append((j, I_typenum, None, I_type, None))
+        i_types.append((j, I_typenum, None, None, I_type, None, None))
         j += 1
 
-        for T_typenum, T_type in T_TYPES:
+        for P_typenum, P_type in P_TYPES:
             piece = """
-            else if (T_typenum == %(T_typenum)s) { return %(j)s; }"""
-            getter_code += piece % dict(T_typenum=T_typenum, j=j)
+            else if (P_typenum == %(P_typenum)s) {
+                if (T_typenum == -1) { return %(j)s; }"""
+            getter_code += piece % dict(P_typenum=P_typenum, j=j)
 
-            it_types.append((j, I_typenum, T_typenum, I_type, T_type))
+            ip_types.append((j, I_typenum, P_typenum, None, I_type, P_type, None))
             j += 1
+
+            for T_typenum, T_type in T_TYPES:
+                piece = """
+                else if (T_typenum == %(T_typenum)s) { return %(j)s; }"""
+                getter_code += piece % dict(T_typenum=T_typenum, j=j)
+
+                ipt_types.append((j, I_typenum, P_typenum, T_typenum, I_type, P_type, T_type))
+                j += 1
+            getter_code += """
+            }"""
 
         getter_code += """
         }"""
 
-    return i_types, it_types, GET_THUNK_CASE_TEMPLATE % dict(content=getter_code)
+    return i_types, ip_types, ipt_types, GET_THUNK_CASE_TEMPLATE % dict(content=getter_code)
 
 
 def parse_routine(name, args, types):
@@ -251,7 +269,7 @@ def parse_routine(name, args, types):
     ret_spec = args[0]
     arg_spec = args[1:]
 
-    def get_arglist(I_type, T_type):
+    def get_arglist(I_type, P_type, T_type):
         """
         Generate argument list for calling the C++ function
         """
@@ -268,6 +286,10 @@ def parse_routine(name, args, types):
                 args.append("*(%s*)a[%d]" % (const + I_type, j))
             elif t == 'I':
                 args.append("(%s*)a[%d]" % (const + I_type, j))
+            elif t == 'p':
+                args.append("*(%s*)a[%d]" % (const + P_type, j))
+            elif t == 'P':
+                args.append("(%s*)a[%d]" % (const + P_type, j))
             elif t == 'T':
                 args.append("(%s*)a[%d]" % (const + T_type, j))
             elif t == 'B':
@@ -276,6 +298,10 @@ def parse_routine(name, args, types):
                 if const:
                     raise ValueError("'V' argument must be an output arg")
                 args.append("(std::vector<%s>*)a[%d]" % (I_type, j,))
+            elif t == 'U':
+                if const:
+                    raise ValueError("'U' argument must be an output arg")
+                args.append("(std::vector<%s>*)a[%d]" % (P_type, j,))
             elif t == 'W':
                 if const:
                     raise ValueError("'W' argument must be an output arg")
@@ -287,14 +313,17 @@ def parse_routine(name, args, types):
 
     # Generate thunk code: a giant switch statement with different
     # type combinations inside.
-    thunk_content = """int j = get_thunk_case(I_typenum, T_typenum);
+    thunk_content = """int j = get_thunk_case(I_typenum, P_typenum, T_typenum);
     switch (j) {"""
-    for j, I_typenum, T_typenum, I_type, T_type in types:
-        arglist = get_arglist(I_type, T_type)
+    for j, I_typenum, P_typenum, T_typenum, I_type, P_type, T_type in types:
+        arglist = get_arglist(I_type, P_type, T_type)
         if T_type is None:
-            dispatch = "%s" % (I_type,)
+            if P_type is None:
+                dispatch = "%s" % (I_type,)
+            else:
+                dispatch = "%s,%s" % (I_type, P_type)
         else:
-            dispatch = "%s,%s" % (I_type, T_type)
+            dispatch = "%s,%s,%s" % (I_type, P_type, T_type)
         if 'B' in arg_spec:
             dispatch += ",npy_bool_wrapper"
 
@@ -307,8 +336,8 @@ def parse_routine(name, args, types):
         else:
             piece += """
             return %(name)s<%(dispatch)s>(%(arglist)s);"""
-        thunk_content += piece % dict(j=j, I_type=I_type, T_type=T_type,
-                                      I_typenum=I_typenum, T_typenum=T_typenum,
+        thunk_content += piece % dict(j=j, I_type=I_type, T_type=T_type, P_type=P_type,
+                                      I_typenum=I_typenum, T_typenum=T_typenum, P_typenum=P_typenum,
                                       arglist=arglist, name=name,
                                       dispatch=dispatch)
 
@@ -336,7 +365,7 @@ def main():
 
     names = []
 
-    i_types, it_types, getter_code = get_thunk_type_set()
+    i_types, ip_types, ipt_types, getter_code = get_thunk_type_set()
 
     # Generate *_impl.h for each compilation unit
     for unit_name, routines in COMPILATION_UNITS:
@@ -355,8 +384,12 @@ def main():
                 raise ValueError("Malformed line: %r" % (line,))
 
             args = "".join(args.split())
-            if 't' in args or 'T' in args:
-                thunk, method = parse_routine(name, args, it_types)
+
+            if 'p' in args or 'P' in args:
+                if 't' in args or 'T' in args:
+                    thunk, method = parse_routine(name, args, ipt_types)
+                else:
+                    thunk, method = parse_routine(name, args, ip_types)
             else:
                 thunk, method = parse_routine(name, args, i_types)
 

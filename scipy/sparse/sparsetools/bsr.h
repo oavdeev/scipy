@@ -8,12 +8,12 @@
 #include "csr.h"
 #include "dense.h"
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_diagonal(const I n_brow,
                   const I n_bcol, 
                   const I R,
                   const I C,
-	              const I Ap[], 
+	              const P Ap[], 
 	              const I Aj[], 
 	              const T Ax[],
 	                    T Yx[])
@@ -28,13 +28,13 @@ void bsr_diagonal(const I n_brow,
 
     if ( R == C ){
         //main diagonal with square blocks
-        const I end = std::min(n_brow,n_bcol);
-        for(I i = 0; i < end; i++){
-            for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        const P end = std::min(n_brow,n_bcol);
+        for(P i = 0; i < end; i++){
+            for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
                 if (i == Aj[jj]){
                     npy_intp row = (npy_intp)R*i;
                     const T * val = Ax + (npy_intp)RC*jj;
-                    for(I bi = 0; bi < R; bi++){
+                    for(P bi = 0; bi < R; bi++){
                         Yx[row + bi] = *val;
                         val += C + 1;
                     }
@@ -45,19 +45,19 @@ void bsr_diagonal(const I n_brow,
     else 
     {
         //This could be made faster
-        const I end = (D/R) + (D % R == 0 ? 0 : 1);
-        for(I i = 0; i < end; i++){
-            for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        const P end = (D/R) + (D % R == 0 ? 0 : 1);
+        for(P i = 0; i < end; i++){
+            for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
                 const npy_intp base_row = (npy_intp)R*i;
                 const npy_intp base_col = (npy_intp)C*Aj[jj];
                 const T * base_val = Ax + (npy_intp)RC*jj;
 
-                for(I bi = 0; bi < R; bi++){
-                    const I row = base_row + bi;
+                for(P bi = 0; bi < R; bi++){
+                    const P row = base_row + bi;
                     if (row >= D) break;
 
-                    for(I bj = 0; bj < C; bj++){
-                        const I col = base_col + bj;
+                    for(P bj = 0; bj < C; bj++){
+                        const P col = base_col + bj;
                         if (row == col){
                             Yx[row] = base_val[(npy_intp)bi*C + bj];
                         }
@@ -76,25 +76,25 @@ void bsr_diagonal(const I n_brow,
  *   A[i,:] *= X[i]
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_scale_rows(const I n_brow,
                     const I n_bcol, 
                     const I R,
                     const I C,
-	                const I Ap[], 
+	                const P Ap[], 
 	                const I Aj[], 
 	                      T Ax[],
 	                const T Xx[])
 {
     const npy_intp RC = (npy_intp)R*C;
 
-    for(I i = 0; i < n_brow; i++){
+    for(P i = 0; i < n_brow; i++){
         const T * row_scales = Xx + (npy_intp)R*i;
 
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
            T * block = Ax + RC*jj;
 
-            for(I bi = 0; bi < R; bi++){
+            for(P bi = 0; bi < R; bi++){
                 scal(C, row_scales[bi], block + (npy_intp)C*bi);
             }
         }
@@ -107,24 +107,24 @@ void bsr_scale_rows(const I n_brow,
  *   A[:,i] *= X[i]
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_scale_columns(const I n_brow,
                        const I n_bcol, 
                        const I R,
                        const I C,
-	                   const I Ap[], 
+	                   const P Ap[], 
 	                   const I Aj[], 
 	                         T Ax[],
 	                   const T Xx[])
 {
-    const I bnnz = Ap[n_brow];
+    const P bnnz = Ap[n_brow];
     const npy_intp RC  = (npy_intp)R*C;
-    for(I i = 0; i < bnnz; i++){
+    for(P i = 0; i < bnnz; i++){
         const T * scales = Xx + (npy_intp)C*Aj[i] ;
         T * block = Ax + RC*i;
 
-        for(I bi = 0; bi < R; bi++){
-            for(I bj = 0; bj < C; bj++){
+        for(P bi = 0; bi < R; bi++){
+            for(P bj = 0; bj < C; bj++){
                 block[C*bi + bj] *= scales[bj];
             }
         }
@@ -147,12 +147,12 @@ void bsr_scale_columns(const I n_brow,
  *   T  Ax[nnz(A)]    - nonzeros
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_sort_indices(const I n_brow,
 	                  const I n_bcol, 
                       const I R,
                       const I C,
-	                        I Ap[], 
+	                        P Ap[], 
 	                        I Aj[], 
 	                        T Ax[])
 {  
@@ -162,14 +162,14 @@ void bsr_sort_indices(const I n_brow,
     }
     
     
-    const I nblks = Ap[n_brow];
+    const P nblks = Ap[n_brow];
     const npy_intp RC    = (npy_intp)R*C;
     const npy_intp nnz   = (npy_intp)RC*nblks;
 
     //compute permutation of blocks using CSR
-    std::vector<I> perm(nblks);
+    std::vector<P> perm(nblks);
 
-    for(I i = 0; i < nblks; i++)
+    for(P i = 0; i < nblks; i++)
         perm[i] = i;
 
     csr_sort_indices(n_brow, Ap, Aj, &perm[0]);
@@ -177,7 +177,7 @@ void bsr_sort_indices(const I n_brow,
     std::vector<T> Ax_copy(nnz);
     std::copy(Ax, Ax + nnz, Ax_copy.begin());
 
-    for(I i = 0; i < nblks; i++){
+    for(P i = 0; i < nblks; i++){
         const T * input = &Ax_copy[RC * perm[i]];
               T * output = Ax + RC*i;
         std::copy(input, input + RC, output);
@@ -212,35 +212,35 @@ void bsr_sort_indices(const I n_brow,
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  * 
  */
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_transpose(const I n_brow,
 	               const I n_bcol, 
                    const I R,
                    const I C,
-	               const I Ap[], 
+	               const P Ap[], 
 	               const I Aj[], 
 	               const T Ax[],
-	                     I Bp[],
+	                     P Bp[],
 	                     I Bj[],
 	                     T Bx[])
 {  
-    const I nblks = Ap[n_brow];
+    const P nblks = Ap[n_brow];
     const npy_intp RC    = (npy_intp)R*C;
 
     //compute permutation of blocks using tranpose(CSR)
-    std::vector<I> perm_in (nblks);
-    std::vector<I> perm_out(nblks);
+    std::vector<P> perm_in (nblks);
+    std::vector<P> perm_out(nblks);
 
-    for(I i = 0; i < nblks; i++)
+    for(P i = 0; i < nblks; i++)
         perm_in[i] = i;
 
     csr_tocsc(n_brow, n_bcol, Ap, Aj, &perm_in[0], Bp, Bj, &perm_out[0]);
 
-    for(I i = 0; i < nblks; i++){
+    for(P i = 0; i < nblks; i++){
         const T * Ax_blk = Ax + RC * perm_out[i];
               T * Bx_blk = Bx + RC * i;
-        for(I r = 0; r < R; r++){
-            for(I c = 0; c < C; c++){
+        for(P r = 0; r < R; r++){
+            for(P c = 0; c < C; c++){
                 Bx_blk[(npy_intp)c * R + r] = Ax_blk[(npy_intp)r * C + c];
             }
         }
@@ -249,12 +249,12 @@ void bsr_transpose(const I n_brow,
 
 
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_matmat_pass2(const I n_brow,  const I n_bcol, 
                       const I R,       const I C,       const I N,
-      	              const I Ap[],    const I Aj[],    const T Ax[],
-      	              const I Bp[],    const I Bj[],    const T Bx[],
-      	                    I Cp[],          I Cj[],          T Cx[])
+      	              const P Ap[],    const I Aj[],    const T Ax[],
+      	              const P Bp[],    const I Bj[],    const T Bx[],
+      	                    P Cp[],          I Cj[],          T Cx[])
 {
     assert(R > 0 && C > 0 && N > 0);
 
@@ -270,25 +270,25 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
 
     std::fill( Cx, Cx + RC * Cp[n_brow], 0 ); //clear output array
  
-    std::vector<I>  next(n_bcol,-1);
+    std::vector<P>  next(n_bcol,-1);
     std::vector<T*> mats(n_bcol);
 
     npy_intp nnz = 0;
     Cp[0] = 0;
 
-    for(I i = 0; i < n_brow; i++){
-        I head   = -2;
-        I length =  0;
+    for(P i = 0; i < n_brow; i++){
+        P head   = -2;
+        P length =  0;
 
-        I jj_start = Ap[i];
-        I jj_end   = Ap[i+1];
-        for(I jj = jj_start; jj < jj_end; jj++){
-            I j = Aj[jj];
+        P jj_start = Ap[i];
+        P jj_end   = Ap[i+1];
+        for(P jj = jj_start; jj < jj_end; jj++){
+            P j = Aj[jj];
 
-            I kk_start = Bp[j];
-            I kk_end   = Bp[j+1];
-            for(I kk = kk_start; kk < kk_end; kk++){
-                I k = Bj[kk];
+            P kk_start = Bp[j];
+            P kk_end   = Bp[j+1];
+            for(P kk = kk_start; kk < kk_end; kk++){
+                P k = Bj[kk];
 
                 if(next[k] == -1){
                     next[k] = head;                        
@@ -306,8 +306,8 @@ void bsr_matmat_pass2(const I n_brow,  const I n_bcol,
             }
         }         
 
-        for(I jj = 0; jj < length; jj++){
-            I temp = head;                
+        for(P jj = 0; jj < length; jj++){
+            P temp = head;                
             head = next[head];
             next[temp] = -1; //clear arrays
         }
@@ -349,33 +349,33 @@ bool is_nonzero_block(const T block[], const I blocksize){
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
-template <class I, class T, class T2, class bin_op>
+template <class I, class P, class T, class T2, class bin_op>
 void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
                            const I R,      const I C,
-                           const I Ap[],  const I Aj[],  const T Ax[],
-                           const I Bp[],  const I Bj[],  const T Bx[],
-                                 I Cp[],        I Cj[],       T2 Cx[],
+                           const P Ap[],  const I Aj[],  const T Ax[],
+                           const P Bp[],  const I Bj[],  const T Bx[],
+                                 P Cp[],        I Cj[],       T2 Cx[],
                            const bin_op& op)
 {
     //Method that works for duplicate and/or unsorted indices
     const npy_intp RC = (npy_intp)R*C;
 
     Cp[0] = 0;
-    I nnz = 0;
+    P nnz = 0;
 
-    std::vector<I>  next(n_bcol,     -1);
+    std::vector<P>  next(n_bcol,     -1);
     std::vector<T> A_row(n_bcol * RC, 0);   // this approach can be problematic for large R
     std::vector<T> B_row(n_bcol * RC, 0);
 
-    for(I i = 0; i < n_brow; i++){
-        I head   = -2;
-        I length =  0;
+    for(P i = 0; i < n_brow; i++){
+        P head   = -2;
+        P length =  0;
 
         //add a row of A to A_row
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            I j = Aj[jj];
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
+            P j = Aj[jj];
 
-            for(I n = 0; n < RC; n++)
+            for(P n = 0; n < RC; n++)
                 A_row[RC*j + n] += Ax[RC*jj + n];
 
             if(next[j] == -1){
@@ -386,10 +386,10 @@ void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
         }
 
         //add a row of B to B_row
-        for(I jj = Bp[i]; jj < Bp[i+1]; jj++){
-            I j = Bj[jj];
+        for(P jj = Bp[i]; jj < Bp[i+1]; jj++){
+            P j = Bj[jj];
 
-            for(I n = 0; n < RC; n++)
+            for(P n = 0; n < RC; n++)
                 B_row[RC*j + n] += Bx[RC*jj + n];
 
             if(next[j] == -1){
@@ -400,9 +400,9 @@ void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
         }
 
 
-        for(I jj = 0; jj < length; jj++){
+        for(P jj = 0; jj < length; jj++){
             // compute op(block_A, block_B)
-            for(I n = 0; n < RC; n++)
+            for(P n = 0; n < RC; n++)
                 Cx[RC * nnz + n] = op(A_row[RC*head + n], B_row[RC*head + n]);
 
             // advance counter if block is nonzero
@@ -410,12 +410,12 @@ void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
                 Cj[nnz++] = head;
 
             // clear block_A and block_B values
-            for(I n = 0; n < RC; n++){
+            for(P n = 0; n < RC; n++){
                 A_row[RC*head + n] = 0;
                 B_row[RC*head + n] = 0;
             }
 
-            I temp = head;               
+            P temp = head;               
             head = next[head];
             next[temp] = -1;
         }
@@ -439,33 +439,33 @@ void bsr_binop_bsr_general(const I n_brow, const I n_bcol,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class T2, class bin_op>
+template <class I, class P, class T, class T2, class bin_op>
 void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol, 
                              const I R,      const I C, 
-                             const I Ap[],  const I Aj[],  const T Ax[],
-                             const I Bp[],  const I Bj[],  const T Bx[],
-                                   I Cp[],        I Cj[],       T2 Cx[],
+                             const P Ap[],  const I Aj[],  const T Ax[],
+                             const P Bp[],  const I Bj[],  const T Bx[],
+                                   P Cp[],        I Cj[],       T2 Cx[],
                              const bin_op& op)
 {
     const npy_intp RC = (npy_intp)R*C;
     T2 * result = Cx;
 
     Cp[0] = 0;
-    I nnz = 0;
+    P nnz = 0;
 
-    for(I i = 0; i < n_brow; i++){
-        I A_pos = Ap[i];
-        I B_pos = Bp[i];
-        I A_end = Ap[i+1];
-        I B_end = Bp[i+1];
+    for(P i = 0; i < n_brow; i++){
+        P A_pos = Ap[i];
+        P B_pos = Bp[i];
+        P A_end = Ap[i+1];
+        P B_end = Bp[i+1];
 
         //while not finished with either row
         while(A_pos < A_end && B_pos < B_end){
-            I A_j = Aj[A_pos];
-            I B_j = Bj[B_pos];
+            P A_j = Aj[A_pos];
+            P B_j = Bj[B_pos];
 
             if(A_j == B_j){
-                for(I n = 0; n < RC; n++){
+                for(P n = 0; n < RC; n++){
                     result[n] = op(Ax[RC*A_pos + n], Bx[RC*B_pos + n]);
                 }
 
@@ -478,7 +478,7 @@ void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol,
                 A_pos++; 
                 B_pos++;
             } else if (A_j < B_j) {
-                for(I n = 0; n < RC; n++){
+                for(P n = 0; n < RC; n++){
                     result[n] = op(Ax[RC*A_pos + n], 0);
                 }
 
@@ -491,7 +491,7 @@ void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol,
                 A_pos++; 
             } else {
                 //B_j < A_j
-                for(I n = 0; n < RC; n++){
+                for(P n = 0; n < RC; n++){
                     result[n] = op(0, Bx[RC*B_pos + n]);
                 }
                 if(is_nonzero_block(result,RC)){
@@ -506,7 +506,7 @@ void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol,
 
         //tail
         while(A_pos < A_end){
-            for(I n = 0; n < RC; n++){
+            for(P n = 0; n < RC; n++){
                 result[n] = op(Ax[RC*A_pos + n], 0);
             }
 
@@ -519,7 +519,7 @@ void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol,
             A_pos++; 
         }
         while(B_pos < B_end){
-            for(I n = 0; n < RC; n++){
+            for(P n = 0; n < RC; n++){
                 result[n] = op(0,Bx[RC*B_pos + n]);
             }
 
@@ -568,12 +568,12 @@ void bsr_binop_bsr_canonical(const I n_brow, const I n_bcol,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class T2, class bin_op>
+template <class I, class P, class T, class T2, class bin_op>
 void bsr_binop_bsr(const I n_brow, const I n_bcol, 
                    const I R,     const I C, 
-                   const I Ap[],  const I Aj[],  const T Ax[],
-                   const I Bp[],  const I Bj[],  const T Bx[],
-                         I Cp[],        I Cj[],       T2 Cx[],
+                   const P Ap[],  const I Aj[],  const T Ax[],
+                   const P Bp[],  const I Bj[],  const T Bx[],
+                         P Cp[],        I Cj[],       T2 Cx[],
                    const bin_op& op)
 {
     assert( R > 0 && C > 0);
@@ -593,103 +593,103 @@ void bsr_binop_bsr(const I n_brow, const I n_bcol,
 }
 
 /* element-wise binary operations */
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void bsr_ne_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void bsr_lt_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void bsr_gt_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void bsr_le_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void bsr_ge_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_elmul_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],       T Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_eldiv_bsr(const I n_row, const I n_col, const I R, const I C,
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],       T Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::divides<T>());
 }
 
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_plus_bsr(const I n_row, const I n_col, const I R, const I C, 
-                  const I Ap[], const I Aj[], const T Ax[],
-                  const I Bp[], const I Bj[], const T Bx[],
-                        I Cp[],       I Cj[],       T Cx[])
+                  const P Ap[], const I Aj[], const T Ax[],
+                  const P Bp[], const I Bj[], const T Bx[],
+                        P Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_minus_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],       T Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
 
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_maximum_bsr(const I n_row, const I n_col, const I R, const I C, 
-                  const I Ap[], const I Aj[], const T Ax[],
-                  const I Bp[], const I Bj[], const T Bx[],
-                        I Cp[],       I Cj[],       T Cx[])
+                  const P Ap[], const I Aj[], const T Ax[],
+                  const P Bp[], const I Bj[], const T Bx[],
+                        P Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_minimum_bsr(const I n_row, const I n_col, const I R, const I C, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],       T Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],       T Cx[])
 {
     bsr_binop_bsr(n_row,n_col,R,C,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
 }
@@ -721,12 +721,12 @@ void bsr_minimum_bsr(const I n_row, const I n_col, const I R, const I C,
 //}
 
 
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_matvec(const I n_brow,
 	            const I n_bcol, 
 	            const I R, 
 	            const I C, 
-	            const I Ap[], 
+	            const P Ap[], 
 	            const I Aj[], 
 	            const T Ax[],
 	            const T Xx[],
@@ -741,10 +741,10 @@ void bsr_matvec(const I n_brow,
     }
 
     const npy_intp RC = (npy_intp)R*C;
-    for(I i = 0; i < n_brow; i++){
+    for(P i = 0; i < n_brow; i++){
         T * y = Yx + (npy_intp)R * i;
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            const I j = Aj[jj];
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
+            const P j = Aj[jj];
             const T * A = Ax + RC * jj;
             const T * x = Xx + (npy_intp)C * j;
             gemv(R, C, A, x, y); // y += A*x
@@ -772,13 +772,13 @@ void bsr_matvec(const I n_brow,
  *   T  Yx[R*n_brow,n_vecs] - output vector
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void bsr_matvecs(const I n_brow,
 	             const I n_bcol, 
                  const I n_vecs,
 	             const I R, 
 	             const I C, 
-	             const I Ap[], 
+	             const P Ap[], 
 	             const I Aj[], 
 	             const T Ax[],
 	             const T Xx[],
@@ -796,10 +796,10 @@ void bsr_matvecs(const I n_brow,
     const npy_intp Y_bs = (npy_intp)n_vecs*R; //Yx blocksize
     const npy_intp X_bs = (npy_intp)C*n_vecs; //Xx blocksize
 
-    for(I i = 0; i < n_brow; i++){
+    for(P i = 0; i < n_brow; i++){
         T * y = Yx + Y_bs * i;
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            const I j = Aj[jj];
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
+            const P j = Aj[jj];
             const T * A = Ax + A_bs * jj;
             const T * x = Xx + X_bs * j;
             gemm(R, n_vecs, C, A, x, y); // y += A*x

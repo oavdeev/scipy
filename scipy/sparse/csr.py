@@ -155,15 +155,19 @@ class csr_matrix(_cs_matrix, IndexMixin):
             return self
 
     def tocsc(self):
-        idx_dtype = get_index_dtype((self.indptr, self.indices),
-                                    maxval=max(self.nnz, self.shape[0]))
-        indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
-        indices = np.empty(self.nnz, dtype=idx_dtype)
+        index_dtype = get_index_dtype((self.indices, ),
+                                        maxval=max(*self.shape))
+
+        indptr_dtype = get_index_dtype((self.indptr, ),
+                                        maxval=self.nnz)
+
+        indptr = np.empty(self.shape[1] + 1, dtype=indptr_dtype)
+        indices = np.empty(self.nnz, dtype=index_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
         csr_tocsc(self.shape[0], self.shape[1],
-                  self.indptr.astype(idx_dtype),
-                  self.indices.astype(idx_dtype),
+                  self.indptr.astype(indptr_dtype),
+                  self.indices.astype(index_dtype),
                   self.data,
                   indptr,
                   indices,
@@ -194,15 +198,19 @@ class csr_matrix(_cs_matrix, IndexMixin):
 
             blks = csr_count_blocks(M,N,R,C,self.indptr,self.indices)
 
-            idx_dtype = get_index_dtype((self.indptr, self.indices),
-                                        maxval=max(N//C, blks))
-            indptr = np.empty(M//R+1, dtype=idx_dtype)
-            indices = np.empty(blks, dtype=idx_dtype)
+            index_dtype = get_index_dtype((self.indices, ),
+                                            maxval=max(N, M))
+
+            indptr_dtype = get_index_dtype((self.indptr, ),
+                                              maxval=N * M)
+
+            indptr = np.empty(M//R+1, dtype=indptr_dtype)
+            indices = np.empty(blks, dtype=index_dtype)
             data = np.zeros((blks,R,C), dtype=self.dtype)
 
             csr_tobsr(M, N, R, C,
-                      self.indptr.astype(idx_dtype),
-                      self.indices.astype(idx_dtype),
+                      self.indptr.astype(indptr_dtype),
+                      self.indices.astype(index_dtype),
                       self.data,
                       indptr, indices, data.ravel())
 

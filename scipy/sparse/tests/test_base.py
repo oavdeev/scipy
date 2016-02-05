@@ -101,6 +101,7 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
             return (np.int32, np.int64)[counter.randint(2)]
     else:
         def new_get_index_dtype(arrays=(), maxval=None, check_contents=False):
+            import sys, inspect,os
             dtype = np.int32
             if maxval is not None:
                 if maxval > maxval_limit:
@@ -119,6 +120,7 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
                                 # a bigger type not needed
                                 continue
                     dtype = np.int64
+
             return dtype
 
     if downcast_maxval is not None:
@@ -4046,7 +4048,7 @@ class Test64Bit(object):
         dtype = np.dtype(dtype)
         if isinstance(m, csc_matrix) or isinstance(m, csr_matrix) \
                or isinstance(m, bsr_matrix):
-            return (m.indices.dtype == dtype) and (m.indptr.dtype == dtype)
+            return (m.indices.dtype == dtype)
         elif isinstance(m, coo_matrix):
             return (m.row.dtype == dtype) and (m.col.dtype == dtype)
         elif isinstance(m, dia_matrix):
@@ -4054,18 +4056,40 @@ class Test64Bit(object):
         else:
             raise ValueError("matrix %r has no integer indices" % (m,))
 
+    def _compare_indptr_dtype(self, m, dtype):
+        dtype = np.dtype(dtype)
+        if isinstance(m, csc_matrix) or isinstance(m, csr_matrix) \
+               or isinstance(m, bsr_matrix):
+            return (m.indptr.dtype == dtype)
+        else:
+            return True
+
     def test_decorator_maxval_limit(self):
         # Test that the with_64bit_maxval_limit decorator works
 
         @with_64bit_maxval_limit(maxval_limit=10)
         def check(mat_cls):
-            m = mat_cls(np.random.rand(10, 1))
+            m = mat_cls(np.random.rand(2, 2))
             assert_(self._compare_index_dtype(m, np.int32))
-            m = mat_cls(np.random.rand(11, 1))
+            assert_(self._compare_indptr_dtype(m, np.int32))
+            m = mat_cls(np.random.rand(10, 10))
+            assert_(self._compare_index_dtype(m, np.int32))
+            assert_(self._compare_indptr_dtype(m, np.int64))
+            m = mat_cls(np.random.rand(11, 11))
+            assert_(self._compare_index_dtype(m, np.int32))
+            assert_(self._compare_indptr_dtype(m, np.int64))
+            m = mat_cls(np.random.rand(12, 12))
             assert_(self._compare_index_dtype(m, np.int64))
+            assert_(self._compare_indptr_dtype(m, np.int64))
+
+            m_ = coo_matrix(([1], ([11],[11])),shape=(12, 12))
+            m = mat_cls(m_)
+            assert_(self._compare_index_dtype(m, np.int64))
+            assert_(self._compare_indptr_dtype(m, np.int32))
 
         for mat_cls in self.MAT_CLASSES:
-            yield check, mat_cls
+            if mat_cls != bsr_matrix:
+                yield check, mat_cls
 
     def test_decorator_maxval_random(self):
         # Test that the with_64bit_maxval_limit decorator works (2)

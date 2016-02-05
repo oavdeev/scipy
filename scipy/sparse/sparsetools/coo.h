@@ -30,36 +30,36 @@
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  * 
  */
-template <class I, class T>
+template <class I, class P, class T>
 void coo_tocsr(const I n_row,
                const I n_col,
-               const I nnz,
+               const P nnz,
                const I Ai[],
                const I Aj[],
                const T Ax[],
-                     I Bp[],
+                     P Bp[],
                      I Bj[],
                      T Bx[])
 {
     //compute number of non-zero entries per row of A 
     std::fill(Bp, Bp + n_row, 0);
 
-    for (I n = 0; n < nnz; n++){            
+    for (P n = 0; n < nnz; n++){            
         Bp[Ai[n]]++;
     }
 
     //cumsum the nnz per row to get Bp[]
-    for(I i = 0, cumsum = 0; i < n_row; i++){     
-        I temp = Bp[i];
+    for(P i = 0, cumsum = 0; i < n_row; i++){     
+        P temp = Bp[i];
         Bp[i] = cumsum;
         cumsum += temp;
     }
     Bp[n_row] = nnz; 
 
     //write Aj,Ax into Bj,Bx
-    for(I n = 0; n < nnz; n++){
-        I row  = Ai[n];
-        I dest = Bp[row];
+    for(P n = 0; n < nnz; n++){
+        P row  = Ai[n];
+        P dest = Bp[row];
 
         Bj[dest] = Aj[n];
         Bx[dest] = Ax[n];
@@ -67,8 +67,8 @@ void coo_tocsr(const I n_row,
         Bp[row]++;
     }
 
-    for(I i = 0, last = 0; i <= n_row; i++){
-        I temp = Bp[i];
+    for(P i = 0, last = 0; i <= n_row; i++){
+        P temp = Bp[i];
         Bp[i]  = last;
         last   = temp;
     }
@@ -89,10 +89,10 @@ void coo_tocsr(const I n_row,
  *   T  Bx[n_row*n_col] - dense matrix
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void coo_todense(const I n_row,
                  const I n_col,
-                 const I nnz,
+                 const P nnz,
                  const I Ai[],
                  const I Aj[],
                  const T Ax[],
@@ -100,12 +100,12 @@ void coo_todense(const I n_row,
 		 int fortran)
 {
     if (!fortran) {
-        for(I n = 0; n < nnz; n++){
+        for(P n = 0; n < nnz; n++){
             Bx[ (npy_intp)n_col * Ai[n] + Aj[n] ] += Ax[n];
         }
     }
     else {
-        for(I n = 0; n < nnz; n++){
+        for(P n = 0; n < nnz; n++){
             Bx[ (npy_intp)n_row * Aj[n] + Ai[n] ] += Ax[n];
         }
     }
@@ -132,15 +132,15 @@ void coo_todense(const I n_row,
  *   Complexity: Linear.  Specifically O(nnz(A))
  * 
  */
-template <class I, class T>
-void coo_matvec(const I nnz,
+template <class I, class P, class T>
+void coo_matvec(const P nnz,
 	            const I Ai[], 
 	            const I Aj[], 
 	            const T Ax[],
 	            const T Xx[],
 	                  T Yx[])
 {
-    for(I n = 0; n < nnz; n++){
+    for(P n = 0; n < nnz; n++){
         Yx[Ai[n]] += Ax[n] * Xx[Aj[n]];
     }
 }

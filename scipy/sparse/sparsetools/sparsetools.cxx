@@ -42,6 +42,9 @@
 #define PyInt_FromSsize_t PyLong_FromSsize_t
 #endif
 
+static const int supported_P_typenums[] = {NPY_INT32, NPY_INT64};
+static const int n_supported_P_typenums = sizeof(supported_P_typenums) / sizeof(int);
+
 static const int supported_I_typenums[] = {NPY_INT32, NPY_INT64};
 static const int n_supported_I_typenums = sizeof(supported_I_typenums) / sizeof(int);
 
@@ -103,9 +106,11 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     int is_output[MAX_ARGS];
     PyObject *return_value = NULL;
     int I_typenum = NPY_INT32;
+    int P_typenum = NPY_INT32;
     int T_typenum = -1;
     int VW_count = 0;
     int I_in_arglist = 0;
+    int P_in_arglist = 0;
     int T_in_arglist = 0;
     int next_is_output = 0;
     int j, k, arg_j;
@@ -169,6 +174,22 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             cur_typenum = I_typenum;
             I_in_arglist = 1;
             break;
+        case 'p':
+            /* Integer scalars */
+            arg = PyTuple_GetItem(args, arg_j);
+            if (arg == NULL) {
+                goto fail;
+            }
+            Py_INCREF(arg);
+            arg_arrays[j] = arg;
+            continue;
+        case 'P':
+            /* Integer arrays */
+            supported_typenums = supported_P_typenums;
+            n_supported_typenums = n_supported_P_typenums;
+            cur_typenum = P_typenum;
+            P_in_arglist = 1;
+            break;
         case 'T':
             /* Data arrays */
             supported_typenums = supported_T_typenums;
@@ -190,6 +211,12 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         case 'V':
             /* std::vector integer output array */
             I_in_arglist = 1;
+            --arg_j;
+            VW_count += 1;
+            continue;
+        case 'U':
+            /* std::vector integer output array */
+            P_in_arglist = 1;
             --arg_j;
             VW_count += 1;
             continue;
@@ -231,6 +258,8 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
         if (*p == 'I') {
             I_typenum = cur_typenum;
+        } else if (*p == 'P') {
+            P_typenum = cur_typenum;
         }
         else {
             T_typenum = cur_typenum;
@@ -243,7 +272,8 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
     }
 
     if ((I_in_arglist && I_typenum == -1) ||
-        (T_in_arglist && T_typenum == -1)) {
+        (T_in_arglist && T_typenum == -1) ||
+        (P_in_arglist && P_typenum == -1)) {
         PyErr_SetString(PyExc_ValueError,
                         "unsupported data types in input");
         goto fail;
@@ -287,12 +317,44 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
                 goto fail;
             }
             continue;
+        } else if (*p == 'p') {
+            /* Integer scalars */
+            Py_ssize_t value;
+
+            value = PyInt_AsSsize_t(arg_arrays[j]);
+            if (PyErr_Occurred()) {
+                goto fail;
+            }
+
+            if (PyArray_EquivTypenums(P_typenum, NPY_INT64)
+                    && value == (npy_int64)value) {
+                arg_list[j] = std::malloc(sizeof(npy_int64));
+                *(npy_int64*)arg_list[j] = (npy_int64)value;
+            }
+            else if (PyArray_EquivTypenums(P_typenum, NPY_INT32)
+                     && value == (npy_int32)value) {
+                arg_list[j] = std::malloc(sizeof(npy_int32));
+                *(npy_int32*)arg_list[j] = (npy_int32)value;
+            }
+            else {
+                PyErr_SetString(PyExc_ValueError,
+                                "could not convert integer scalar");
+                goto fail;
+            }
+            continue;
         }
         else if (*p == 'B') {
             /* Boolean arrays already cast */
         }
         else if (*p == 'V') {
             arg_list[j] = allocate_std_vector_typenum(I_typenum);
+            if (arg_list[j] == NULL) {
+                goto fail;
+            }
+            continue;
+        }
+        else if (*p == 'U') {
+            arg_list[j] = allocate_std_vector_typenum(P_typenum);
             if (arg_list[j] == NULL) {
                 goto fail;
             }
@@ -306,7 +368,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             continue;
         }
         else {
-            cur_typenum = (*p == 'I' || *p == 'i') ? I_typenum : T_typenum;
+            cur_typenum = (*p == 'I' || *p == 'i') ? I_typenum : ((*p == 'P' || *p == 'p') ? P_typenum : T_typenum);
 
             /* Cast if necessary */
             arg = arg_arrays[j];
@@ -347,7 +409,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         NPY_BEGIN_THREADS;
     }
     try {
-        ret = thunk(I_typenum, T_typenum, arg_list);
+        ret = thunk(I_typenum, P_typenum, T_typenum, arg_list);
         NPY_END_THREADS;
     } catch (const std::bad_alloc &e) {
         NPY_END_THREADS;
@@ -365,6 +427,9 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
     switch (ret_spec) {
     case 'i':
+        return_value = PyInt_FromSsize_t(ret);
+        break;
+    case 'p':
         return_value = PyInt_FromSsize_t(ret);
         break;
     case 'v':
@@ -405,10 +470,12 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
                 --j;
                 continue;
             }
-            else if (*p == 'V' || *p == 'W') {
+            else if (*p == 'V' || *p == 'W' || *p == 'U') {
                 PyObject *arg;
                 if (*p == 'V') {
                     arg = array_from_std_vector_and_free(I_typenum, arg_list[j]);
+                } else if (*p == 'U') {
+                    arg = array_from_std_vector_and_free(P_typenum, arg_list[j]);
                 } else {
                     arg = array_from_std_vector_and_free(T_typenum, arg_list[j]);
                 }
@@ -437,6 +504,9 @@ fail:
         }
         else if (spec[j] == 'V' && arg_list[j] != NULL) {
             free_std_vector_typenum(I_typenum, arg_list[j]);
+        }
+        else if (spec[j] == 'U' && arg_list[j] != NULL) {
+            free_std_vector_typenum(P_typenum, arg_list[j]);
         }
         else if (spec[j] == 'W' && arg_list[j] != NULL) {
             free_std_vector_typenum(T_typenum, arg_list[j]);

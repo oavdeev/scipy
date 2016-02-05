@@ -8,17 +8,17 @@
  * Note:
  *   Output array flag must be preallocated
  */
-template <class I>
+template <class I, class P>
 I cs_graph_components(const I n_nod,
-		      const I Ap[],
+		      const P Ap[],
 		      const I Aj[],
 		            I flag[])
 {
   // pos is a work array: list of nodes (rows) to process.
   std::vector<I> pos(n_nod,01);
-  I n_comp = 0;
-  I n_tot, n_pos, n_pos_new, n_pos0, n_new, n_stop;
-  I icomp, ii, ir, ic;
+  P n_comp = 0;
+  P n_tot, n_pos, n_pos_new, n_pos0, n_new, n_stop;
+  P icomp, ii, ir, ic;
 
   n_stop = n_nod;
   for (ir = 0; ir < n_nod; ir++) {

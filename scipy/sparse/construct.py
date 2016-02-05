@@ -261,9 +261,11 @@ def eye(m, n=None, k=0, dtype=float, format=None):
     if m == n and k == 0:
         # fast branch for special formats
         if format in ['csr', 'csc']:
-            idx_dtype = get_index_dtype(maxval=n)
-            indptr = np.arange(n+1, dtype=idx_dtype)
-            indices = np.arange(n, dtype=idx_dtype)
+            index_dtype = get_index_dtype(maxval=n)
+            indptr_dtype = get_index_dtype(maxval=n*n)
+
+            indptr = np.arange(n+1, dtype=indptr_dtype)
+            indices = np.arange(n, dtype=index_dtype)
             data = np.ones(n, dtype=dtype)
             cls = {'csr': csr_matrix, 'csc': csc_matrix}[format]
             return cls((data,indices,indptr),(n,n))

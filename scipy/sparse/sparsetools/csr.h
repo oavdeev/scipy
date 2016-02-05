@@ -30,22 +30,22 @@
  *   Complexity: Linear.  Specifically O(nnz(A) + min(n_row,n_col))
  * 
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_diagonal(const I n_row,
                   const I n_col, 
-	              const I Ap[], 
+	              const P Ap[], 
 	              const I Aj[], 
 	              const T Ax[],
 	                    T Yx[])
 {
-    const I N = std::min(n_row, n_col);
+    const P N = std::min(n_row, n_col);
 
-    for(I i = 0; i < N; i++){
-        const I row_start = Ap[i];
-        const I row_end   = Ap[i+1];
+    for(P i = 0; i < N; i++){
+        const P row_start = Ap[i];
+        const P row_end   = Ap[i+1];
 
         T diag = 0;
-        for(I jj = row_start; jj < row_end; jj++){
+        for(P jj = row_start; jj < row_end; jj++){
             if (Aj[jj] == i)
                 diag += Ax[jj];
         }
@@ -72,13 +72,13 @@ void csr_diagonal(const I n_row,
  *   Complexity: Linear
  * 
  */
-template <class I>
+template <class I, class P>
 void expandptr(const I n_row,
-               const I Ap[], 
+               const P Ap[], 
                      I Bi[])
 {
     for(I i = 0; i < n_row; i++){
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
             Bi[jj] = i;
         }
     }
@@ -91,16 +91,16 @@ void expandptr(const I n_row,
  *   A[i,:] *= X[i]
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_scale_rows(const I n_row,
                     const I n_col, 
-	                const I Ap[], 
+	                const P Ap[], 
 	                const I Aj[], 
 	                      T Ax[],
 	                const T Xx[])
 {
     for(I i = 0; i < n_row; i++){
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
             Ax[jj] *= Xx[i];
         }
     }
@@ -113,16 +113,16 @@ void csr_scale_rows(const I n_row,
  *   A[:,i] *= X[i]
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_scale_columns(const I n_row,
                        const I n_col, 
-	                   const I Ap[], 
+	                   const P Ap[], 
 	                   const I Aj[], 
 	                         T Ax[],
 	                   const T Xx[])
 {
-    const I nnz = Ap[n_row];
-    for(I i = 0; i < nnz; i++){
+    const P nnz = Ap[n_row];
+    for(P i = 0; i < nnz; i++){
         Ax[i] *= Xx[Aj[i]];
     }
 }
@@ -145,19 +145,19 @@ void csr_scale_columns(const I n_row,
  *   Complexity: Linear
  * 
  */
-template <class I>
+template <class I, class P>
 I csr_count_blocks(const I n_row,
                    const I n_col,
                    const I R,
                    const I C,
-                   const I Ap[], 
+                   const P Ap[], 
                    const I Aj[])
 {
     std::vector<I> mask(n_col/C + 1,-1);
     I n_blks = 0;
     for(I i = 0; i < n_row; i++){
         I bi = i/R;
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
             I bj = Aj[jj]/C;
             if(mask[bj] != bi){
                 mask[bj] = bi;
@@ -192,15 +192,15 @@ I csr_count_blocks(const I n_row,
  *
  * 
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_tobsr(const I n_row,
 	           const I n_col, 
 	           const I R, 
 	           const I C, 
-	           const I Ap[], 
+	           const P Ap[], 
 	           const I Aj[], 
 	           const T Ax[],
-	                 I Bp[],
+	                 P Bp[],
                      I Bj[],
 	                 T Bx[])
 {
@@ -209,22 +209,22 @@ void csr_tobsr(const I n_row,
     assert( n_row % R == 0 );
     assert( n_col % C == 0 );
 
-    I n_brow = n_row / R;
-    //I n_bcol = n_col / C;
+    P n_brow = n_row / R;
+    //P n_bcol = n_col / C;
 
-    I RC = R*C;
-    I n_blks = 0;
+    P RC = R*C;
+    P n_blks = 0;
 
     Bp[0] = 0;
 
-    for(I bi = 0; bi < n_brow; bi++){
-        for(I r = 0; r < R; r++){
-            I i = R*bi + r;  //row index
-            for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-                I j = Aj[jj]; //column index
+    for(P bi = 0; bi < n_brow; bi++){
+        for(P r = 0; r < R; r++){
+            P i = R*bi + r;  //row index
+            for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
+                P j = Aj[jj]; //column index
 
-                I bj = j / C;
-                I c  = j % C;
+                P bj = j / C;
+                P c  = j % C;
                 
                 if( blocks[bj] == 0 ){
                     blocks[bj] = Bx + RC*n_blks;
@@ -254,13 +254,13 @@ void csr_tobsr(const I n_row,
  *   I  Aj[nnz(A)]      - column indices
  *
  */
-template <class I>
+template <class I, class P>
 bool csr_has_sorted_indices(const I n_row, 
-                            const I Ap[],
+                            const P Ap[],
                             const I Aj[])
 {
   for(I i = 0; i < n_row; i++){
-      for(I jj = Ap[i]; jj < Ap[i+1] - 1; jj++){
+      for(P jj = Ap[i]; jj < Ap[i+1] - 1; jj++){
           if(Aj[jj] > Aj[jj+1]){
               return false;
           }
@@ -283,15 +283,15 @@ bool csr_has_sorted_indices(const I n_row,
  *   I  Aj[nnz(A)]      - column indices
  *
  */
-template <class I>
+template <class I, class P>
 bool csr_has_canonical_format(const I n_row, 
-                              const I Ap[],
+                              const P Ap[],
                               const I Aj[])
 {
     for(I i = 0; i < n_row; i++){
         if (Ap[i] > Ap[i+1])
             return false;
-        for(I jj = Ap[i] + 1; jj < Ap[i+1]; jj++){
+        for(P jj = Ap[i] + 1; jj < Ap[i+1]; jj++){
             if( !(Aj[jj-1] < Aj[jj]) ){
                 return false;
             }
@@ -316,27 +316,27 @@ bool kv_pair_less(const std::pair<T1,T2>& x, const std::pair<T1,T2>& y){
  *   T  Ax[nnz(A)]      - nonzeros 
  *
  */
-template<class I, class T>
+template<class I, class P, class T>
 void csr_sort_indices(const I n_row,
-                      const I Ap[], 
+                      const P Ap[], 
                             I Aj[], 
                             T Ax[])
 {
     std::vector< std::pair<I,T> > temp;
 
     for(I i = 0; i < n_row; i++){
-        I row_start = Ap[i];
-        I row_end   = Ap[i+1];
+        P row_start = Ap[i];
+        P row_end   = Ap[i+1];
 
         temp.resize(row_end - row_start);
-        for (I jj = row_start, n = 0; jj < row_end; jj++, n++){
+        for (P jj = row_start, n = 0; jj < row_end; jj++, n++){
             temp[n].first  = Aj[jj];
             temp[n].second = Ax[jj];
         }
 
         std::sort(temp.begin(),temp.end(),kv_pair_less<I,T>);
 
-        for(I jj = row_start, n = 0; jj < row_end; jj++, n++){
+        for(P jj = row_start, n = 0; jj < row_end; jj++, n++){
             Aj[jj] = temp[n].first;
             Ax[jj] = temp[n].second;
         }
@@ -376,37 +376,37 @@ void csr_sort_indices(const I n_row,
  *   Complexity: Linear.  Specifically O(nnz(A) + max(n_row,n_col))
  * 
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_tocsc(const I n_row,
 	           const I n_col, 
-	           const I Ap[], 
+	           const P Ap[], 
 	           const I Aj[], 
 	           const T Ax[],
-	                 I Bp[],
+	                 P Bp[],
 	                 I Bi[],
 	                 T Bx[])
 {  
-    const I nnz = Ap[n_row];
+    const P nnz = Ap[n_row];
 
     //compute number of non-zero entries per column of A 
     std::fill(Bp, Bp + n_col, 0);
 
-    for (I n = 0; n < nnz; n++){            
+    for (P n = 0; n < nnz; n++){            
         Bp[Aj[n]]++;
     }
 
     //cumsum the nnz per column to get Bp[]
-    for(I col = 0, cumsum = 0; col < n_col; col++){     
-        I temp  = Bp[col];
+    for(P col = 0, cumsum = 0; col < n_col; col++){     
+        P temp  = Bp[col];
         Bp[col] = cumsum;
         cumsum += temp;
     }
     Bp[n_col] = nnz; 
 
-    for(I row = 0; row < n_row; row++){
-        for(I jj = Ap[row]; jj < Ap[row+1]; jj++){
-            I col  = Aj[jj];
-            I dest = Bp[col];
+    for(P row = 0; row < n_row; row++){
+        for(P jj = Ap[row]; jj < Ap[row+1]; jj++){
+            P col  = Aj[jj];
+            P dest = Bp[col];
 
             Bi[dest] = row;
             Bx[dest] = Ax[jj];
@@ -415,8 +415,8 @@ void csr_tocsc(const I n_row,
         }
     }  
 
-    for(I col = 0, last = 0; col <= n_col; col++){
-        I temp  = Bp[col];
+    for(P col = 0, last = 0; col <= n_col; col++){
+        P temp  = Bp[col];
         Bp[col] = last;
         last    = temp;
     }
@@ -446,10 +446,10 @@ void csr_tocsc(const I n_row,
  *   Rows with fewer than row_length columns are padded with zeros.
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_toell(const I n_row,
 	           const I n_col, 
-	           const I Ap[], 
+	           const P Ap[], 
 	           const I Aj[], 
 	           const T Ax[],
                const I row_length,
@@ -463,7 +463,7 @@ void csr_toell(const I n_row,
     for(I i = 0; i < n_row; i++){
         I * Bj_row = Bj + (npy_intp)row_length * i;
         T * Bx_row = Bx + (npy_intp)row_length * i;
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
             *Bj_row = Aj[jj];            
             *Bx_row = Ax[jj];            
             Bj_row++;
@@ -520,27 +520,27 @@ void csr_toell(const I n_row,
  * Pass 1 computes CSR row pointer for the matrix product C = A * B
  *
  */
-template <class I>
+template <class I, class P>
 void csr_matmat_pass1(const I n_row,
                       const I n_col, 
-                      const I Ap[], 
+                      const P Ap[], 
                       const I Aj[], 
-                      const I Bp[],
+                      const P Bp[],
                       const I Bj[],
-                            I Cp[])
+                            P Cp[])
 {
     // method that uses O(n) temp storage
     std::vector<I> mask(n_col, -1);
     Cp[0] = 0;
 
-    I nnz = 0;
-    for(I i = 0; i < n_row; i++){
+    P nnz = 0;
+    for(P i = 0; i < n_row; i++){
         npy_intp row_nnz = 0;
 
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
-            I j = Aj[jj];
-            for(I kk = Bp[j]; kk < Bp[j+1]; kk++){
-                I k = Bj[kk];
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
+            P j = Aj[jj];
+            for(P kk = Bp[j]; kk < Bp[j+1]; kk++){
+                P k = Bj[kk];
                 if(mask[k] != i){
                     mask[k] = i;                        
                     row_nnz++;
@@ -550,7 +550,7 @@ void csr_matmat_pass1(const I n_row,
 
         npy_intp next_nnz = nnz + row_nnz;
 
-        if (row_nnz > NPY_MAX_INTP - nnz || next_nnz != (I)next_nnz) {
+        if (row_nnz > NPY_MAX_INTP - nnz || next_nnz != (P)next_nnz) {
             /*
              * Index overflowed. Note that row_nnz <= n_col and cannot overflow
              */
@@ -567,40 +567,40 @@ void csr_matmat_pass1(const I n_row,
  * row pointer Cp[] computed in Pass 1.
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_matmat_pass2(const I n_row,
       	              const I n_col, 
-      	              const I Ap[], 
+      	              const P Ap[], 
       	              const I Aj[], 
       	              const T Ax[],
-      	              const I Bp[],
+      	              const P Bp[],
       	              const I Bj[],
       	              const T Bx[],
-      	                    I Cp[],
+      	                    P Cp[],
       	                    I Cj[],
       	                    T Cx[])
 {
     std::vector<I> next(n_col,-1);
     std::vector<T> sums(n_col, 0);
 
-    I nnz = 0;
+    P nnz = 0;
 
     Cp[0] = 0;
 
-    for(I i = 0; i < n_row; i++){
-        I head   = -2;
-        I length =  0;
+    for(P i = 0; i < n_row; i++){
+        P head   = -2;
+        P length =  0;
 
-        I jj_start = Ap[i];
-        I jj_end   = Ap[i+1];
-        for(I jj = jj_start; jj < jj_end; jj++){
-            I j = Aj[jj];
+        P jj_start = Ap[i];
+        P jj_end   = Ap[i+1];
+        for(P jj = jj_start; jj < jj_end; jj++){
+            P j = Aj[jj];
             T v = Ax[jj];
 
-            I kk_start = Bp[j];
-            I kk_end   = Bp[j+1];
-            for(I kk = kk_start; kk < kk_end; kk++){
-                I k = Bj[kk];
+            P kk_start = Bp[j];
+            P kk_end   = Bp[j+1];
+            for(P kk = kk_start; kk < kk_end; kk++){
+                P k = Bj[kk];
 
                 sums[k] += v*Bx[kk];
 
@@ -612,7 +612,7 @@ void csr_matmat_pass2(const I n_row,
             }
         }         
 
-        for(I jj = 0; jj < length; jj++){
+        for(P jj = 0; jj < length; jj++){
 
             if(sums[head] != 0){
                 Cj[nnz] = head;
@@ -620,7 +620,7 @@ void csr_matmat_pass2(const I n_row,
                 nnz++;
             }
 
-            I temp = head;                
+            P temp = head;                
             head = next[head];
 
             next[temp] = -1; //clear arrays
@@ -651,11 +651,11 @@ void csr_matmat_pass2(const I n_row,
  *           C will not contain any duplicate entries or explicit zeros.
  *
  */
-template <class I, class T, class T2, class binary_op>
+template <class I, class P, class T, class T2, class binary_op>
 void csr_binop_csr_general(const I n_row, const I n_col, 
-                           const I Ap[], const I Aj[], const T Ax[],
-                           const I Bp[], const I Bj[], const T Bx[],
-                                 I Cp[],       I Cj[],       T2 Cx[],
+                           const P Ap[], const I Aj[], const T Ax[],
+                           const P Bp[], const I Bj[], const T Bx[],
+                                 P Cp[],       I Cj[],       T2 Cx[],
                            const binary_op& op)
 {
     //Method that works for duplicate and/or unsorted indices
@@ -664,18 +664,18 @@ void csr_binop_csr_general(const I n_row, const I n_col,
     std::vector<T> A_row(n_col, 0);
     std::vector<T> B_row(n_col, 0);
 
-    I nnz = 0;
+    P nnz = 0;
     Cp[0] = 0;
     
-    for(I i = 0; i < n_row; i++){
-        I head   = -2;
-        I length =  0;
+    for(P i = 0; i < n_row; i++){
+        P head   = -2;
+        P length =  0;
     
         //add a row of A to A_row
-        I i_start = Ap[i];
-        I i_end   = Ap[i+1];
-        for(I jj = i_start; jj < i_end; jj++){
-            I j = Aj[jj];
+        P i_start = Ap[i];
+        P i_end   = Ap[i+1];
+        for(P jj = i_start; jj < i_end; jj++){
+            P j = Aj[jj];
     
             A_row[j] += Ax[jj];
     
@@ -689,8 +689,8 @@ void csr_binop_csr_general(const I n_row, const I n_col,
         //add a row of B to B_row
         i_start = Bp[i];
         i_end   = Bp[i+1];
-        for(I jj = i_start; jj < i_end; jj++){
-            I j = Bj[jj];
+        for(P jj = i_start; jj < i_end; jj++){
+            P j = Bj[jj];
     
             B_row[j] += Bx[jj];
     
@@ -704,7 +704,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
    
         // scan through columns where A or B has 
         // contributed a non-zero entry
-        for(I jj = 0; jj < length; jj++){
+        for(P jj = 0; jj < length; jj++){
             T result = op(A_row[head], B_row[head]);
     
             if(result != 0){
@@ -713,7 +713,7 @@ void csr_binop_csr_general(const I n_row, const I n_col,
                 nnz++;
             }
     
-            I temp = head;               
+            P temp = head;               
             head = next[head];
     
             next[temp]  = -1;
@@ -741,28 +741,28 @@ void csr_binop_csr_general(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class T2, class binary_op>
+template <class I, class P, class T, class T2, class binary_op>
 void csr_binop_csr_canonical(const I n_row, const I n_col, 
-                             const I Ap[], const I Aj[], const T Ax[],
-                             const I Bp[], const I Bj[], const T Bx[],
-                                   I Cp[],       I Cj[],       T2 Cx[],
+                             const P Ap[], const I Aj[], const T Ax[],
+                             const P Bp[], const I Bj[], const T Bx[],
+                                   P Cp[],       I Cj[],       T2 Cx[],
                              const binary_op& op)
 {
     //Method that works for canonical CSR matrices 
 
     Cp[0] = 0;
-    I nnz = 0;
+    P nnz = 0;
 
-    for(I i = 0; i < n_row; i++){
-        I A_pos = Ap[i];
-        I B_pos = Bp[i];
-        I A_end = Ap[i+1];
-        I B_end = Bp[i+1];
+    for(P i = 0; i < n_row; i++){
+        P A_pos = Ap[i];
+        P B_pos = Bp[i];
+        P A_end = Ap[i+1];
+        P B_end = Bp[i+1];
 
         //while not finished with either row
         while(A_pos < A_end && B_pos < B_end){
-            I A_j = Aj[A_pos];
-            I B_j = Bj[B_pos];
+            P A_j = Aj[A_pos];
+            P B_j = Bj[B_pos];
 
             if(A_j == B_j){
                 T result = op(Ax[A_pos],Bx[B_pos]);
@@ -849,16 +849,16 @@ void csr_binop_csr_canonical(const I n_row, const I n_col,
  *           Cx will not contain any zero entries
  *
  */
-template <class I, class T, class T2, class binary_op>
+template <class I, class P, class T, class T2, class binary_op>
 void csr_binop_csr(const I n_row,
                    const I n_col, 
-                   const I Ap[], 
+                   const P Ap[], 
                    const I Aj[], 
                    const T Ax[],
-                   const I Bp[],
+                   const P Bp[],
                    const I Bj[],
                    const T Bx[],
-                         I Cp[],
+                         P Cp[],
                          I Cj[],
                          T2 Cx[],
                    const binary_op& op)
@@ -870,102 +870,102 @@ void csr_binop_csr(const I n_row,
 }
 
 /* element-wise binary operations*/
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void csr_ne_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::not_equal_to<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void csr_lt_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void csr_gt_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void csr_le_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::less_equal<T>());
 }
 
-template <class I, class T, class T2>
+template <class I, class P, class T, class T2>
 void csr_ge_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],      T2 Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],      T2 Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::greater_equal<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void csr_elmul_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],       T Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::multiplies<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void csr_eldiv_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],       T Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,safe_divides<T>());
 }
 
 
-template <class I, class T>
+template <class I, class P, class T>
 void csr_plus_csr(const I n_row, const I n_col, 
-                  const I Ap[], const I Aj[], const T Ax[],
-                  const I Bp[], const I Bj[], const T Bx[],
-                        I Cp[],       I Cj[],       T Cx[])
+                  const P Ap[], const I Aj[], const T Ax[],
+                  const P Bp[], const I Bj[], const T Bx[],
+                        P Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::plus<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void csr_minus_csr(const I n_row, const I n_col, 
-                   const I Ap[], const I Aj[], const T Ax[],
-                   const I Bp[], const I Bj[], const T Bx[],
-                         I Cp[],       I Cj[],       T Cx[])
+                   const P Ap[], const I Aj[], const T Ax[],
+                   const P Bp[], const I Bj[], const T Bx[],
+                         P Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,std::minus<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void csr_maximum_csr(const I n_row, const I n_col, 
-                     const I Ap[], const I Aj[], const T Ax[],
-                     const I Bp[], const I Bj[], const T Bx[],
-                           I Cp[],       I Cj[],       T Cx[])
+                     const P Ap[], const I Aj[], const T Ax[],
+                     const P Bp[], const I Bj[], const T Bx[],
+                           P Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,maximum<T>());
 }
 
-template <class I, class T>
+template <class I, class P, class T>
 void csr_minimum_csr(const I n_row, const I n_col, 
-                     const I Ap[], const I Aj[], const T Ax[],
-                     const I Bp[], const I Bj[], const T Bx[],
-                           I Cp[],       I Cj[],       T Cx[])
+                     const P Ap[], const I Aj[], const T Ax[],
+                     const P Bp[], const I Bj[], const T Bx[],
+                           P Cp[],       I Cj[],       T Cx[])
 {
     csr_binop_csr(n_row,n_col,Ap,Aj,Ax,Bp,Bj,Bx,Cp,Cj,Cx,minimum<T>());
 }
@@ -988,20 +988,20 @@ void csr_minimum_csr(const I n_row, const I n_col,
  *   Ap, Aj, and Ax will be modified *inplace*
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_sum_duplicates(const I n_row,
                         const I n_col, 
-                              I Ap[], 
+                              P Ap[], 
                               I Aj[], 
                               T Ax[])
 {
-    I nnz = 0;
-    I row_end = 0;
-    for(I i = 0; i < n_row; i++){
-        I jj = row_end;
+    P nnz = 0;
+    P row_end = 0;
+    for(P i = 0; i < n_row; i++){
+        P jj = row_end;
         row_end = Ap[i+1];
         while( jj < row_end ){
-            I j = Aj[jj];
+            P j = Aj[jj];
             T x = Ax[jj];
             jj++;
             while( jj < row_end && Aj[jj] == j ){
@@ -1031,20 +1031,20 @@ void csr_sum_duplicates(const I n_row,
  *   Ap, Aj, and Ax will be modified *inplace*
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_eliminate_zeros(const I n_row,
                          const I n_col, 
-                               I Ap[], 
+                               P Ap[], 
                                I Aj[], 
                                T Ax[])
 {
-    I nnz = 0;
-    I row_end = 0;
-    for(I i = 0; i < n_row; i++){
-        I jj = row_end;
+    P nnz = 0;
+    P row_end = 0;
+    for(P i = 0; i < n_row; i++){
+        P jj = row_end;
         row_end = Ap[i+1];
         while( jj < row_end ){
-            I j = Aj[jj];
+            P j = Aj[jj];
             T x = Ax[jj];
             if(x != 0){
                 Aj[nnz] = j;
@@ -1080,10 +1080,10 @@ void csr_eliminate_zeros(const I n_row,
  *   Complexity: Linear.  Specifically O(nnz(A) + n_row)
  * 
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_matvec(const I n_row,
 	            const I n_col, 
-	            const I Ap[], 
+	            const P Ap[], 
 	            const I Aj[], 
 	            const T Ax[],
 	            const T Xx[],
@@ -1091,7 +1091,7 @@ void csr_matvec(const I n_row,
 {
     for(I i = 0; i < n_row; i++){
         T sum = Yx[i];
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
             sum += Ax[jj] * Xx[Aj[jj]];
         }
         Yx[i] = sum;
@@ -1116,11 +1116,11 @@ void csr_matvec(const I n_row,
  *   T  Yx[n_row,n_vecs] - output vector
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_matvecs(const I n_row,
 	             const I n_col, 
                  const I n_vecs,
-	             const I Ap[], 
+	             const P Ap[], 
 	             const I Aj[], 
 	             const T Ax[],
 	             const T Xx[],
@@ -1128,7 +1128,7 @@ void csr_matvecs(const I n_row,
 {
     for(I i = 0; i < n_row; i++){
         T * y = Yx + (npy_intp)n_vecs * i;
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
             const I j = Aj[jj];
             const T a = Ax[jj];
             const T * x = Xx + (npy_intp)n_vecs * j;
@@ -1140,31 +1140,31 @@ void csr_matvecs(const I n_row,
 
 
 
-template<class I, class T>
+template<class I, class P, class T>
 void get_csr_submatrix(const I n_row,
 		               const I n_col,
-		               const I Ap[], 
+		               const P Ap[], 
 		               const I Aj[], 
 		               const T Ax[],
 		               const I ir0,
 		               const I ir1,
 		               const I ic0,
 		               const I ic1,
-		               std::vector<I>* Bp,
+		               std::vector<P>* Bp,
 		               std::vector<I>* Bj,
 		               std::vector<T>* Bx)
 {
-    I new_n_row = ir1 - ir0;
-    //I new_n_col = ic1 - ic0;  //currently unused
-    I new_nnz = 0;
-    I kk = 0;
+    P new_n_row = ir1 - ir0;
+    //P new_n_col = ic1 - ic0;  //currently unused
+    P new_nnz = 0;
+    P kk = 0;
 
     // Count nonzeros total/per row.
-    for(I i = 0; i < new_n_row; i++){
-        I row_start = Ap[ir0+i];
-        I row_end   = Ap[ir0+i+1];
+    for(P i = 0; i < new_n_row; i++){
+        P row_start = Ap[ir0+i];
+        P row_end   = Ap[ir0+i+1];
 
-        for(I jj = row_start; jj < row_end; jj++){
+        for(P jj = row_start; jj < row_end; jj++){
             if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
                 new_nnz++;
             }
@@ -1178,11 +1178,11 @@ void get_csr_submatrix(const I n_row,
 
     // Assign.
     (*Bp)[0] = 0;
-    for(I i = 0; i < new_n_row; i++){
-        I row_start = Ap[ir0+i];
-        I row_end   = Ap[ir0+i+1];
+    for(P i = 0; i < new_n_row; i++){
+        P row_start = Ap[ir0+i];
+        P row_end   = Ap[ir0+i+1];
 
-        for(I jj = row_start; jj < row_end; jj++){
+        for(P jj = row_start; jj < row_end; jj++){
             if ((Aj[jj] >= ic0) && (Aj[jj] < ic1)) {
                 (*Bj)[kk] = Aj[jj] - ic0;
                 (*Bx)[kk] = Ax[jj];
@@ -1203,15 +1203,15 @@ void get_csr_submatrix(const I n_row,
  *   I  Aj[nnz(A)]      - column indices
  *
  */
-template <class I>
+template <class I, class P>
 I csr_count_diagonals(const I n_row,
-                      const I Ap[],
+                      const P Ap[],
                       const I Aj[])
 {
-    std::set<I> diagonals;
+    std::set<P> diagonals;
     
-    for(I i = 0; i < n_row; i++){
-        for(I jj = Ap[i]; jj < Ap[i+1]; jj++){
+    for(P i = 0; i < n_row; i++){
+        for(P jj = Ap[i]; jj < Ap[i+1]; jj++){
             diagonals.insert(Aj[jj] - i);
         }
     }
@@ -1246,10 +1246,10 @@ I csr_count_diagonals(const I n_row,
  *   TODO handle other cases with asymptotically optimal method
  *
  */
-template <class I, class T>
+template <class I, class P, class T>
 void csr_sample_values(const I n_row,
                        const I n_col,
-                       const I Ap[],
+                       const P Ap[],
                        const I Aj[],
                        const T Ax[],
                        const I n_samples,
@@ -1269,23 +1269,23 @@ void csr_sample_values(const I n_row,
     // Case 5: A is not canonical and num_samples << nnz
     //   -> do linear searches for each sample
 
-    const I nnz = Ap[n_row];
+    const P nnz = Ap[n_row];
 
-    const I threshold = nnz / 10; // constant is arbitrary
+    const P threshold = nnz / 10; // constant is arbitrary
 
     if (n_samples > threshold && csr_has_canonical_format(n_row, Ap, Aj))
     {
-        for(I n = 0; n < n_samples; n++)
+        for(P n = 0; n < n_samples; n++)
         {
-            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
-            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+            const P i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const P j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
    
-            const I row_start = Ap[i];
-            const I row_end   = Ap[i+1];
+            const P row_start = Ap[i];
+            const P row_end   = Ap[i+1];
             
             if (row_start < row_end)
             {
-                const I offset = std::lower_bound(Aj + row_start, Aj + row_end, j) - Aj;
+                const P offset = std::lower_bound(Aj + row_start, Aj + row_end, j) - Aj;
                 
                 if (offset < row_end && Aj[offset] == j)
                     Bx[n] = Ax[offset];
@@ -1301,17 +1301,17 @@ void csr_sample_values(const I n_row,
     }
     else
     {
-        for(I n = 0; n < n_samples; n++)
+        for(P n = 0; n < n_samples; n++)
         {
-            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
-            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+            const P i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const P j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
     
-            const I row_start = Ap[i];
-            const I row_end   = Ap[i+1];
+            const P row_start = Ap[i];
+            const P row_end   = Ap[i+1];
            
             T x = 0;
             
-            for(I jj = row_start; jj < row_end; jj++)
+            for(P jj = row_start; jj < row_end; jj++)
             {
                 if (Aj[jj] == j)
                     x += Ax[jj];
@@ -1348,32 +1348,32 @@ void csr_sample_values(const I n_row,
  *   Complexity: varies. See csr_sample_values
  *
  */
-template <class I>
+template <class I, class P>
 int csr_sample_offsets(const I n_row,
                         const I n_col,
-                        const I Ap[],
+                        const P Ap[],
                         const I Aj[],
                         const I n_samples,
                         const I Bi[],
                         const I Bj[],
-                              I Bp[])
+                              P Bp[])
 {
-    const I nnz = Ap[n_row];
-    const I threshold = nnz / 10; // constant is arbitrary
+    const P nnz = Ap[n_row];
+    const P threshold = nnz / 10; // constant is arbitrary
 
     if (n_samples > threshold && csr_has_canonical_format(n_row, Ap, Aj))
     {
-        for(I n = 0; n < n_samples; n++)
+        for(P n = 0; n < n_samples; n++)
         {
-            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
-            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+            const P i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const P j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
 
-            const I row_start = Ap[i];
-            const I row_end   = Ap[i+1];
+            const P row_start = Ap[i];
+            const P row_end   = Ap[i+1];
 
             if (row_start < row_end)
             {
-                const I offset = std::lower_bound(Aj + row_start, Aj + row_end, j) - Aj;
+                const P offset = std::lower_bound(Aj + row_start, Aj + row_end, j) - Aj;
 
                 if (offset < row_end && Aj[offset] == j)
                     Bp[n] = offset;
@@ -1388,17 +1388,17 @@ int csr_sample_offsets(const I n_row,
     }
     else
     {
-        for(I n = 0; n < n_samples; n++)
+        for(P n = 0; n < n_samples; n++)
         {
-            const I i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
-            const I j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
+            const P i = Bi[n] < 0 ? Bi[n] + n_row : Bi[n]; // sample row
+            const P j = Bj[n] < 0 ? Bj[n] + n_col : Bj[n]; // sample column
 
-            const I row_start = Ap[i];
-            const I row_end   = Ap[i+1];
+            const P row_start = Ap[i];
+            const P row_end   = Ap[i+1];
 
-            I offset = -1;
+            P offset = -1;
 
-            for(I jj = row_start; jj < row_end; jj++)
+            for(P jj = row_start; jj < row_end; jj++)
             {
                 if (Aj[jj] == j) {
                 	offset = jj;
