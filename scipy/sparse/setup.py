@@ -49,6 +49,8 @@ def configuration(parent_package='',top_path=None):
                          define_macros=[('__STDC_FORMAT_MACROS', 1)],
                          depends=depends,
                          include_dirs=['sparsetools'],
+                         extra_compile_args=['-fopenmp'],
+                         libraries=['gomp'],
                          sources=[os.path.join('sparsetools', 'sparsetools.cxx'),
                                   os.path.join('sparsetools', 'csr.cxx'),
                                   os.path.join('sparsetools', 'csc.cxx'),

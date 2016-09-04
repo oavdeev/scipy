@@ -75,6 +75,7 @@ void csc_matvecs(const I n_row,
 	             const T Xx[],
 	                   T Yx[])
 {
+    #pragma omp parallel for
     for(I j = 0; j < n_col; j++){
         for(I ii = Ap[j]; ii < Ap[j+1]; ii++){
             const I i = Ai[ii];
